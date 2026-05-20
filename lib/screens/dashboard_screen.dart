@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,6 +9,7 @@ import '../providers/dashboard_providers.dart';
 import '../theme/colors.dart';
 import '../utils/formatters.dart';
 import '../widgets/mascot.dart';
+import '../widgets/mascot_refresh_indicator.dart';
 import '../widgets/meter_point_card.dart';
 import '../widgets/offline_banner.dart';
 
@@ -32,9 +34,11 @@ class DashboardScreen extends ConsumerWidget {
           ),
           const OfflineBanner(),
           Expanded(
-            child: RefreshIndicator(
-              color: AppColors.teal,
-              onRefresh: () => ref.refresh(dashboardProvider.future),
+            child: MascotRefreshIndicator(
+              onRefresh: () async {
+                HapticFeedback.selectionClick();
+                await ref.refresh(dashboardProvider.future);
+              },
               child: dashboard.when(
                 loading: () => const _LoadingState(),
                 error: (e, _) => _ErrorView(
@@ -43,6 +47,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 data: (data) {
                   return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                     children: [
                       _SyncStatusCard(account: data.tauronAccount),
@@ -60,7 +65,10 @@ class DashboardScreen extends ConsumerWidget {
                               child: MeterPointCard(
                                 meterPoint: mp,
                                 summary: data.summariesByMpId[mp.id],
-                                onTap: () => context.push('/ppe/${mp.id}'),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  context.push('/ppe/${mp.id}');
+                                },
                               ),
                             )),
                     ],
@@ -133,13 +141,19 @@ class _GradientHeader extends StatelessWidget {
               ),
               _IconBtn(
                 icon: Icons.notifications_outlined,
-                onTap: onAlerts,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onAlerts();
+                },
                 tooltip: 'Alerty',
               ),
               const SizedBox(width: 6),
               _IconBtn(
                 icon: Icons.person_outline,
-                onTap: onSettings,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onSettings();
+                },
                 tooltip: 'Ustawienia',
               ),
             ],
@@ -171,8 +185,8 @@ class _IconBtn extends StatelessWidget {
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: SizedBox(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             child: Icon(icon, color: Colors.white, size: 20),
           ),
         ),

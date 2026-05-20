@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -226,6 +227,7 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
     if (ok == true) {
+      HapticFeedback.mediumImpact();
       await ref.read(authRepositoryProvider).signOut();
       if (context.mounted) {
         context.go('/login');

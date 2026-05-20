@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/meter_point.dart';
@@ -10,6 +11,7 @@ import '../providers/meter_point_detail_providers.dart';
 import '../theme/colors.dart';
 import '../utils/formatters.dart';
 import '../widgets/kpi_tile.dart';
+import '../widgets/mascot_refresh_indicator.dart';
 import '../widgets/status_badge.dart';
 
 class PpeDetailsScreen extends ConsumerWidget {
@@ -35,9 +37,11 @@ class PpeDetailsScreen extends ConsumerWidget {
             ),
             orElse: () => const Text('PPE'),
           ),
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
-            tabs: [
+            tabAlignment: TabAlignment.start,
+            onTap: (_) => HapticFeedback.selectionClick(),
+            tabs: const [
               Tab(text: 'Przegląd'),
               Tab(text: 'Moc 15-min'),
               Tab(text: 'Energia bierna'),
@@ -75,11 +79,13 @@ class _OverviewTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return RefreshIndicator(
+    return MascotRefreshIndicator(
       onRefresh: () async {
+        HapticFeedback.selectionClick();
         ref.invalidate(meterPointSummaryProvider(meterPoint.id));
       },
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
           Row(
@@ -169,14 +175,18 @@ class _PowerTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final powerAsync = ref.watch(power15MinProvider(meterPoint.id));
-    return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(power15MinProvider(meterPoint.id)),
+    return MascotRefreshIndicator(
+      onRefresh: () async {
+        HapticFeedback.selectionClick();
+        ref.invalidate(power15MinProvider(meterPoint.id));
+      },
       child: powerAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Błąd: $e')),
         data: (readings) {
           if (readings.isEmpty) {
             return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               children: const [
                 SizedBox(height: 80),
                 Center(child: Text('Brak odczytów 15-minutowych.')),
@@ -184,6 +194,7 @@ class _PowerTab extends ConsumerWidget {
             );
           }
           return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             children: [
               SizedBox(
@@ -317,17 +328,23 @@ class _ReactiveTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final readingsAsync = ref.watch(readingsProvider(meterPointId));
-    return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(readingsProvider(meterPointId)),
+    return MascotRefreshIndicator(
+      onRefresh: () async {
+        HapticFeedback.selectionClick();
+        ref.invalidate(readingsProvider(meterPointId));
+      },
       child: readingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Błąd: $e')),
         data: (readings) {
           if (readings.isEmpty) {
-            return ListView(children: const [
-              SizedBox(height: 80),
-              Center(child: Text('Brak danych o energii biernej.')),
-            ]);
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 80),
+                Center(child: Text('Brak danych o energii biernej.')),
+              ],
+            );
           }
           final take = readings.take(30).toList().reversed.toList();
           final maxY = take.fold<double>(0, (m, r) {
@@ -452,19 +469,26 @@ class _ReadingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final readingsAsync = ref.watch(readingsProvider(meterPointId));
-    return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(readingsProvider(meterPointId)),
+    return MascotRefreshIndicator(
+      onRefresh: () async {
+        HapticFeedback.selectionClick();
+        ref.invalidate(readingsProvider(meterPointId));
+      },
       child: readingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Błąd: $e')),
         data: (readings) {
           if (readings.isEmpty) {
-            return ListView(children: const [
-              SizedBox(height: 80),
-              Center(child: Text('Brak odczytów.')),
-            ]);
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 80),
+                Center(child: Text('Brak odczytów.')),
+              ],
+            );
           }
           return ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             itemCount: readings.length,
             separatorBuilder: (_, __) => const Divider(height: 1),

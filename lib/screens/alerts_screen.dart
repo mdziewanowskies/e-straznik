@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,6 +8,7 @@ import '../providers/alerts_providers.dart';
 import '../providers/supabase_provider.dart';
 import '../theme/colors.dart';
 import '../utils/formatters.dart';
+import '../widgets/mascot_refresh_indicator.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/status_badge.dart';
 
@@ -34,39 +36,53 @@ class AlertsScreen extends ConsumerWidget {
                 _FilterChip(
                   label: 'Wszystkie',
                   selected: filter.severity == null,
-                  onTap: () =>
-                      ref.read(alertsFilterProvider.notifier).setSeverity(null),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(alertsFilterProvider.notifier).setSeverity(null);
+                  },
                 ),
                 _FilterChip(
                   label: 'Krytyczne',
                   selected: filter.severity == 'critical',
                   color: AppColors.danger,
-                  onTap: () => ref
-                      .read(alertsFilterProvider.notifier)
-                      .setSeverity('critical'),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref
+                        .read(alertsFilterProvider.notifier)
+                        .setSeverity('critical');
+                  },
                 ),
                 _FilterChip(
                   label: 'Ostrzeżenia',
                   selected: filter.severity == 'warning',
                   color: AppColors.warning,
-                  onTap: () => ref
-                      .read(alertsFilterProvider.notifier)
-                      .setSeverity('warning'),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref
+                        .read(alertsFilterProvider.notifier)
+                        .setSeverity('warning');
+                  },
                 ),
                 _FilterChip(
                   label: 'Info',
                   selected: filter.severity == 'info',
                   color: AppColors.primary,
-                  onTap: () =>
-                      ref.read(alertsFilterProvider.notifier).setSeverity('info'),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref
+                        .read(alertsFilterProvider.notifier)
+                        .setSeverity('info');
+                  },
                 ),
               ],
             ),
           ),
           Expanded(
-            child: RefreshIndicator(
-              color: AppColors.teal,
-              onRefresh: () => ref.refresh(alertsProvider.future),
+            child: MascotRefreshIndicator(
+              onRefresh: () async {
+                HapticFeedback.selectionClick();
+                await ref.refresh(alertsProvider.future);
+              },
               child: alertsAsync.when(
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
@@ -74,15 +90,24 @@ class AlertsScreen extends ConsumerWidget {
                     Center(child: Text('Nie udało się załadować: $e')),
                 data: (alerts) {
                   if (alerts.isEmpty) {
-                    return _EmptyAlerts(hasFilter: filter.severity != null);
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        _EmptyAlerts(hasFilter: filter.severity != null),
+                      ],
+                    );
                   }
                   return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                     itemCount: alerts.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, i) => _AlertTile(
                       alert: alerts[i],
-                      onTap: () => context.push('/alerts/${alerts[i].id}'),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        context.push('/alerts/${alerts[i].id}');
+                      },
                     ),
                   );
                 },
@@ -472,8 +497,10 @@ class _AlertDetailScreenState extends ConsumerState<AlertDetailScreen> {
                 SizedBox(
                   height: 52,
                   child: ElevatedButton.icon(
-                    onPressed: () =>
-                        context.push('/ppe/${alert.meterPointId}'),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.push('/ppe/${alert.meterPointId}');
+                    },
                     icon: const Icon(Icons.bolt_rounded, size: 18),
                     label: const Text('Otwórz punkt PPE'),
                   ),

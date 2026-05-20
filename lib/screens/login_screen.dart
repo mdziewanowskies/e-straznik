@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -42,10 +43,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _passwordController.text,
           );
       if (!mounted) return;
+      HapticFeedback.lightImpact();
       // Wymuś nawigację — uniknięcie race condition z guardem routera.
       context.go('/dashboard');
     } catch (e) {
       if (!mounted) return;
+      HapticFeedback.heavyImpact();
       setState(() => _error = mapErrorToPolish(e));
     } finally {
       if (mounted) setState(() => _loading = false);

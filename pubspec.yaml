@@ -48,6 +48,9 @@ dependencies:
   # Deep links
   app_links: ^6.3.2
 
+  # Pull-to-refresh z customowym widgetem (maskotka zamiast spinnera)
+  custom_refresh_indicator: ^4.0.1
+
   collection: ^1.18.0
 
 dev_dependencies:
