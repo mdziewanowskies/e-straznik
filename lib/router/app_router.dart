@@ -1,9 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../providers/auth_providers.dart';
 import '../screens/alerts_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/login_screen.dart';
@@ -13,17 +14,15 @@ import '../screens/splash_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _AuthNotifier();
-  ref.listen<AsyncValue<AuthState>>(
-    authStateChangesProvider,
-    (_, __) => notifier.notify(),
-  );
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
     initialLocation: '/',
     refreshListenable: notifier,
     redirect: (context, state) {
-      final session = ref.read(sessionProvider);
+      // Czytamy sesję bezpośrednio z Supabase, żeby uniknąć race condition
+      // z odświeżeniem providerów Riverpoda po sign in/out.
+      final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
       final loc = state.matchedLocation;
       final atLogin = loc == '/login';
@@ -60,5 +59,17 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 class _AuthNotifier extends ChangeNotifier {
-  void notify() => notifyListeners();
+  _AuthNotifier() {
+    _sub = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+      notifyListeners();
+    });
+  }
+
+  late final StreamSubscription<AuthState> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
 }
