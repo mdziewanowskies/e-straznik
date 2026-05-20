@@ -94,8 +94,8 @@ Aplikacja używa Firebase Cloud Messaging. Bez plików konfiguracyjnych apka
 Pliki pobierz z konsoli Firebase z projektu `e-Strażnik` po dodaniu aplikacji
 o ID:
 
-- Android: `com.estraznik.app`
-- iOS: `com.estraznik.app`
+- Android: `com.md.eStraznik`
+- iOS: `com.md.eStraznik`
 
 Po stronie backendu webowego trzeba mieć `FCM_SERVER_KEY` w secrets Lovable
 Cloud i wysyłać push po INSERT do `alerts` jeśli
