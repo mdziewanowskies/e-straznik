@@ -11,27 +11,36 @@ class SplashScreen extends StatelessWidget {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.gradientHero),
-        child: const SafeArea(
+        child: SafeArea(
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Mascot(size: 140),
-                SizedBox(height: 24),
-                Text(
+                const Mascot(size: 160),
+                const SizedBox(height: 16),
+                const Text(
                   'e-Strażnik',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 32,
                     fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
                   ),
                 ),
-                SizedBox(height: 32),
+                const SizedBox(height: 6),
+                Text(
+                  'Pilnujemy Twojego eLicznika 24/7',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 40),
                 SizedBox(
                   width: 28,
                   height: 28,
                   child: CircularProgressIndicator(
-                    color: Colors.white,
+                    color: Colors.white.withValues(alpha: 0.85),
                     strokeWidth: 2.5,
                   ),
                 ),

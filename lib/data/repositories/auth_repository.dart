@@ -1,6 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../config/supabase_config.dart';
 import '../models/profile.dart';
 
 class AuthRepository {
@@ -17,14 +16,6 @@ class AuthRepository {
     required String password,
   }) {
     return _client.auth.signInWithPassword(email: email, password: password);
-  }
-
-  Future<bool> signInWithGoogle() {
-    return _client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: SupabaseConfig.oauthRedirect,
-      authScreenLaunchMode: LaunchMode.externalApplication,
-    );
   }
 
   Future<void> signOut() => _client.auth.signOut();

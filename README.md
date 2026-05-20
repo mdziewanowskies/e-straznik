@@ -34,7 +34,7 @@ Jedyne dozwolone zapisy w apce:
 
 ## Ekrany
 
-1. **Splash + Login** — `email/hasło` + Google OAuth. Brak rejestracji
+1. **Splash + Login** — logowanie email/hasło. Brak rejestracji
    ("Konto tworzysz w panelu webowym e-strażnika").
 2. **Dashboard** — lista PPE (status, KPI MTD, tg φ, przekroczenia), banner z
    `last_sync_at` z `tauron_accounts`.
@@ -76,15 +76,11 @@ Po stronie backendu webowego trzeba mieć `FCM_SERVER_KEY` w secrets Lovable
 Cloud i wysyłać push po INSERT do `alerts` jeśli
 `notification_prefs.push === true`.
 
-### 4. Deep links / OAuth callback
+### 4. Deep links
 
 Już skonfigurowane w `AndroidManifest.xml` i `ios/Runner/Info.plist`:
 
-- `io.estraznik.app://login-callback` — callback OAuth (Google przez Supabase)
 - `estraznik://alerts/<id>` — deep link z pushy do konkretnego alertu
-
-W konsoli Supabase dodaj `io.estraznik.app://login-callback` do listy
-*Redirect URLs* w Authentication → URL Configuration.
 
 ### 5. Klucze Supabase
 
