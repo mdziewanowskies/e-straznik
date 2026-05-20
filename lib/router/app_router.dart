@@ -25,11 +25,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final isLoggedIn = session != null;
-      final atLogin = state.matchedLocation == '/login';
-      final atSplash = state.matchedLocation == '/';
+      final loc = state.matchedLocation;
+      final atLogin = loc == '/login';
+      final atSplash = loc == '/';
 
       if (!isLoggedIn) {
-        if (atLogin || atSplash) return null;
+        if (atLogin) return null;
         return '/login';
       }
       if (atLogin || atSplash) return '/dashboard';
