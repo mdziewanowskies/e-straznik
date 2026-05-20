@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "787367990872",
+    "project_id": "e-straznik",
+    "storage_bucket": "e-straznik.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:787367990872:android:f4a9f378b9d23423a71c2d",
+        "android_client_info": {
+          "package_name": "com.md.eStraznik"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFiWuBz97HzyJjQVJ3WRM54-TLzMLrfLk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
