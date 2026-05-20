@@ -58,6 +58,31 @@ flutter pub get
 Wrzuć plik PNG maskotki jako `assets/images/mascot.png`. Bez tego pliku apka
 będzie pokazywała fallbackową ikonę z gradientem (nie powoduje błędu).
 
+### 2.1 Natywny splash screen
+
+Splash (granat + maskotka) generuje `flutter_native_splash` z konfiguracji
+w `pubspec.yaml`. Po każdej zmianie maskotki lub konfiguracji uruchom:
+
+```bash
+dart run flutter_native_splash:create
+```
+
+To wygeneruje:
+
+- `android/app/src/main/res/drawable*/launch_background.xml` + ikony
+- `ios/Runner/Assets.xcassets/LaunchImage.imageset/*`
+- zmieni `ios/Runner/Info.plist` i `Base.lproj/LaunchScreen.storyboard`
+
+Splash trzymany jest aż do zakończenia `Supabase.initialize` (w `main.dart`
+przez `FlutterNativeSplash.preserve` + `remove`), więc nie ma białego
+mignięcia między natywnym splashem a Flutterem.
+
+Cofnięcie (jeśli chcesz wrócić do domyślnego):
+
+```bash
+dart run flutter_native_splash:remove
+```
+
 ### 3. Firebase (push notifications)
 
 Aplikacja używa Firebase Cloud Messaging. Bez plików konfiguracyjnych apka

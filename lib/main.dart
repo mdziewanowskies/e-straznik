@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,7 +24,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  // Trzymaj natywny splash do czasu zakończenia inicjalizacji.
+  FlutterNativeSplash.preserve(widgetsBinding: binding);
 
   await initializeDateFormatting('pl_PL');
 
@@ -42,6 +45,8 @@ Future<void> main() async {
   );
 
   runApp(const ProviderScope(child: ESApp()));
+  // Zdejmij natywny splash dopiero gdy pierwsza klatka Fluttera jest gotowa.
+  FlutterNativeSplash.remove();
 }
 
 class ESApp extends ConsumerStatefulWidget {

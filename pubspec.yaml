@@ -57,9 +57,26 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # Generuje natywne splash screeny (iOS LaunchScreen + Android 12 splash)
+  flutter_native_splash: ^2.4.3
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
+
+# Konfiguracja natywnego splasha — uruchom:
+#   dart run flutter_native_splash:create
+# po każdej zmianie tej sekcji lub maskotki.
+flutter_native_splash:
+  color: "#1B2A4E"
+  image: assets/images/mascot.png
+  android_12:
+    color: "#1B2A4E"
+    image: assets/images/mascot.png
+    icon_background_color: "#1B2A4E"
+  ios: true
+  android: true
+  web: false
+  fullscreen: false
