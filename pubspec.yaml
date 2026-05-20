@@ -59,12 +59,28 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   # Generuje natywne splash screeny (iOS LaunchScreen + Android 12 splash)
   flutter_native_splash: ^2.4.3
+  # Generuje ikony aplikacji dla iOS i Androida
+  flutter_launcher_icons: ^0.14.2
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
+
+# Konfiguracja ikon aplikacji — uruchom:
+#   dart run flutter_launcher_icons
+# po każdej zmianie maskotki lub konfiguracji.
+flutter_launcher_icons:
+  ios: true
+  android: "ic_launcher"
+  remove_alpha_ios: true
+  background_color_ios: "#1B2A4E"
+  image_path: "assets/icons/app_icon.png"
+  # Android adaptive icons (Android 8+)
+  adaptive_icon_background: "#1B2A4E"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  min_sdk_android: 21
 
 # Konfiguracja natywnego splasha — uruchom:
 #   dart run flutter_native_splash:create

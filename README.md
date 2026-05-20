@@ -58,7 +58,27 @@ flutter pub get
 Wrzuć plik PNG maskotki jako `assets/images/mascot.png`. Bez tego pliku apka
 będzie pokazywała fallbackową ikonę z gradientem (nie powoduje błędu).
 
-### 2.1 Natywny splash screen
+### 2.1 Ikona aplikacji
+
+Ikony (iOS + Android adaptive) generuje `flutter_launcher_icons` z konfiguracji
+w `pubspec.yaml`. Źródła leżą w `assets/icons/`:
+
+- `app_icon.png` — 1024×1024, granat #1B2A4E + maskotka ~78%, bez alphy (iOS,
+  AppStore-ready)
+- `app_icon_foreground.png` — 1024×1024 transparent, maskotka ~60% (Android
+  adaptive foreground na granatowym tle)
+
+Po każdej zmianie któregoś z plików:
+
+```bash
+dart run flutter_launcher_icons
+```
+
+To wygeneruje wszystkie wymagane rozmiary do
+`ios/Runner/Assets.xcassets/AppIcon.appiconset/` oraz
+`android/app/src/main/res/mipmap-*/`.
+
+### 2.2 Natywny splash screen
 
 Splash (granat + maskotka) generuje `flutter_native_splash` z konfiguracji
 w `pubspec.yaml`. Po każdej zmianie maskotki lub konfiguracji uruchom:
