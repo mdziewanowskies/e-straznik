@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../providers/supabase_provider.dart';
 import '../services/error_messages.dart';
@@ -40,6 +41,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+      if (!mounted) return;
+      // Wymuś nawigację — uniknięcie race condition z guardem routera.
+      context.go('/dashboard');
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = mapErrorToPolish(e));
@@ -63,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             top: 0,
             left: 0,
             right: 0,
-            height: keyboardOpen ? 200 : 360,
+            height: keyboardOpen ? 180 : 320,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               decoration: const BoxDecoration(
@@ -82,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           // Form card
           Positioned.fill(
-            top: keyboardOpen ? 180 : 280,
+            top: keyboardOpen ? 160 : 260,
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
                 left: 20,
@@ -114,28 +118,19 @@ class _HeroContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 32),
+      padding: const EdgeInsets.only(top: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: const [
-          Mascot(size: 140),
-          SizedBox(height: 8),
+          Mascot(size: 130),
+          SizedBox(height: 6),
           Text(
             'e-Strażnik',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.3,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Pilnujemy Twojego eLicznika 24/7',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
             ),
           ),
         ],
