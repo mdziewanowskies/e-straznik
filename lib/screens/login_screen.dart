@@ -70,15 +70,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.top -
-                  48,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                 const SizedBox(height: 24),
                 const Center(child: Mascot(size: 120)),
                 const SizedBox(height: 16),
@@ -198,21 +192,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ],
                   ),
                 ),
-                const Spacer(),
-                const SizedBox(height: 24),
-                Center(
-                  child: Text(
-                    'Konto tworzysz w panelu webowym e-strażnika',
-                    style: TextStyle(
-                      color: AppColors.mutedFg,
-                      fontSize: 12.5,
-                    ),
-                    textAlign: TextAlign.center,
+              const SizedBox(height: 32),
+              Center(
+                child: Text(
+                  'Konto tworzysz w panelu webowym e-strażnika',
+                  style: TextStyle(
+                    color: AppColors.mutedFg,
+                    fontSize: 12.5,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+            ],
           ),
         ),
       ),
