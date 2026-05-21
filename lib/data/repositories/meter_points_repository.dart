@@ -30,25 +30,35 @@ class MeterPointsRepository {
     return MeterPoint.fromJson(data);
   }
 
+  static const _summaryColumns =
+      'meter_point_id, year, month, consumed_kwh_mtd, reactive_inductive_kvarh_mtd, reactive_capacitive_kvarh_mtd, current_tg_phi, projected_tg_phi_eom, exceedance_count, status';
+
   Future<List<MonthlySummary>> listMonthlySummaries(
       List<String> meterPointIds) async {
     if (meterPointIds.isEmpty) return const [];
     final data = await _client
         .from('monthly_summary')
-        .select(
-            'meter_point_id, consumed_kwh_mtd, reactive_inductive_kvarh_mtd, reactive_capacitive_kvarh_mtd, current_tg_phi, projected_tg_phi_eom, exceedance_count, status')
-        .inFilter('meter_point_id', meterPointIds);
-    return (data as List)
-        .map((e) => MonthlySummary.fromJson(e as Map<String, dynamic>))
-        .toList();
+        .select(_summaryColumns)
+        .inFilter('meter_point_id', meterPointIds)
+        .order('year', ascending: false)
+        .order('month', ascending: false);
+    final rows = (data as List).cast<Map<String, dynamic>>();
+    final latestByMp = <String, Map<String, dynamic>>{};
+    for (final row in rows) {
+      final mpId = row['meter_point_id'] as String;
+      latestByMp.putIfAbsent(mpId, () => row);
+    }
+    return latestByMp.values.map(MonthlySummary.fromJson).toList();
   }
 
   Future<MonthlySummary?> fetchSummary(String meterPointId) async {
     final data = await _client
         .from('monthly_summary')
-        .select(
-            'meter_point_id, consumed_kwh_mtd, reactive_inductive_kvarh_mtd, reactive_capacitive_kvarh_mtd, current_tg_phi, projected_tg_phi_eom, exceedance_count, status')
+        .select(_summaryColumns)
         .eq('meter_point_id', meterPointId)
+        .order('year', ascending: false)
+        .order('month', ascending: false)
+        .limit(1)
         .maybeSingle();
     if (data == null) return null;
     return MonthlySummary.fromJson(data);
@@ -87,9 +97,9 @@ class MeterPointsRepository {
     final data = await _client
         .from('power_exceedances')
         .select(
-            'id, meter_point_id, occurred_at, exceedance_kw, power_kw, pum_kw')
+            'id, meter_point_id, timestamp_15min, exceedance_kw, power_kw, pum_kw')
         .eq('meter_point_id', meterPointId)
-        .order('occurred_at', ascending: false)
+        .order('timestamp_15min', ascending: false)
         .limit(limit);
     return (data as List)
         .map((e) => PowerExceedance.fromJson(e as Map<String, dynamic>))
@@ -101,9 +111,9 @@ class MeterPointsRepository {
     final data = await _client
         .from('readings')
         .select(
-            'id, reading_date, active_t1_kwh, active_t2_kwh, reactive_inductive_kvarh, reactive_capacitive_kvarh, export_kwh')
+            'id, date_from, date_to, profile, active_consumed_kwh_total, active_consumed_kwh_t1, active_consumed_kwh_t2, active_produced_kwh_total, reactive_inductive_kvarh_total, reactive_capacitive_kvarh_total')
         .eq('meter_point_id', meterPointId)
-        .order('reading_date', ascending: false)
+        .order('date_from', ascending: false)
         .limit(limit);
     return (data as List)
         .map((e) => Reading.fromJson(e as Map<String, dynamic>))

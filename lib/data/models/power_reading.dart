@@ -42,9 +42,8 @@ class PowerExceedance {
       PowerExceedance(
         id: json['id'] as String,
         meterPointId: json['meter_point_id'] as String,
-        occurredAt: DateTime.parse(
-                (json['occurred_at'] ?? json['timestamp_15min']) as String)
-            .toLocal(),
+        occurredAt:
+            DateTime.parse(json['timestamp_15min'] as String).toLocal(),
         exceedanceKw: (json['exceedance_kw'] as num?)?.toDouble() ?? 0,
         powerKw: (json['power_kw'] as num?)?.toDouble(),
         pumKw: (json['pum_kw'] as num?)?.toDouble(),
@@ -72,14 +71,13 @@ class Reading {
 
   factory Reading.fromJson(Map<String, dynamic> json) => Reading(
         id: json['id'] as String,
-        date: DateTime.parse(
-                (json['reading_date'] ?? json['date'] ?? json['day']) as String)
-            .toLocal(),
-        activeT1Kwh: (json['active_t1_kwh'] as num?)?.toDouble(),
-        activeT2Kwh: (json['active_t2_kwh'] as num?)?.toDouble(),
-        inductiveKvarh: (json['reactive_inductive_kvarh'] as num?)?.toDouble(),
+        date: DateTime.parse(json['date_from'] as String).toLocal(),
+        activeT1Kwh: (json['active_consumed_kwh_t1'] as num?)?.toDouble(),
+        activeT2Kwh: (json['active_consumed_kwh_t2'] as num?)?.toDouble(),
+        inductiveKvarh:
+            (json['reactive_inductive_kvarh_total'] as num?)?.toDouble(),
         capacitiveKvarh:
-            (json['reactive_capacitive_kvarh'] as num?)?.toDouble(),
-        exportKwh: (json['export_kwh'] as num?)?.toDouble(),
+            (json['reactive_capacitive_kvarh_total'] as num?)?.toDouble(),
+        exportKwh: (json['active_produced_kwh_total'] as num?)?.toDouble(),
       );
 }
