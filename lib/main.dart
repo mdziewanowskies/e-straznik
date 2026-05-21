@@ -64,7 +64,11 @@ class _ESAppState extends ConsumerState<ESApp> {
     // Initialize push once user is logged in.
     ref.listenManual<bool>(isAuthenticatedProvider, (prev, next) {
       if (next && _push == null) {
-        _initPush();
+        // Defer do mikrotaska — listenManual z fireImmediately:true
+        // odpala callback synchronicznie podczas initState/build, a my
+        // wewnątrz mutujemy StateProvider (pushNotificationServiceProvider),
+        // co powoduje assertion "!_dirty" w ProviderScope.
+        Future.microtask(_initPush);
       }
     }, fireImmediately: true);
   }
