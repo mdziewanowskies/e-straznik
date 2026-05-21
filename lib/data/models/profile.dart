@@ -13,7 +13,18 @@ class Profile {
     this.notificationPrefs = const {},
   });
 
-  bool get pushEnabled => notificationPrefs['push'] == true;
+  /// Struktura w bazie: `{"channels": {"push": {"enabled": true}, "email": {"enabled": true}}}`.
+  /// Patrz `docs/mobile_push_integration.md`.
+  bool get pushEnabled => _channelEnabled('push');
+  bool get emailEnabled => _channelEnabled('email');
+
+  bool _channelEnabled(String channel) {
+    final channels = notificationPrefs['channels'];
+    if (channels is! Map) return false;
+    final ch = channels[channel];
+    if (ch is! Map) return false;
+    return ch['enabled'] == true;
+  }
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
         id: json['id'] as String,

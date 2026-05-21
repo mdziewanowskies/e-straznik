@@ -10,7 +10,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/supabase_config.dart';
-import 'data/repositories/device_token_repository.dart';
 import 'providers/auth_providers.dart';
 import 'providers/supabase_provider.dart';
 import 'router/app_router.dart';
@@ -73,8 +72,9 @@ class _ESAppState extends ConsumerState<ESApp> {
   Future<void> _initPush() async {
     try {
       _push = PushNotificationService(
-        DeviceTokenRepository(ref.read(supabaseClientProvider)),
+        ref.read(deviceTokenRepositoryProvider),
       );
+      ref.read(pushNotificationServiceProvider.notifier).state = _push;
       await _push!.initialize();
       _push!.deepLinks.listen((link) {
         final router = ref.read(routerProvider);

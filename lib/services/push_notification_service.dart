@@ -116,6 +116,21 @@ class PushNotificationService {
     }
   }
 
+  /// Wywołać PRZED `auth.signOut()` (póki jeszcze mamy JWT) — backend
+  /// czyści wpis w device_tokens, a FCM dostaje nowy token przy następnym
+  /// logowaniu.
+  Future<void> unregister() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _tokenRepo.unregisterToken(token);
+      }
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (e) {
+      debugPrint('[push] unregister flow error: $e');
+    }
+  }
+
   void dispose() {
     _deepLinkController.close();
   }

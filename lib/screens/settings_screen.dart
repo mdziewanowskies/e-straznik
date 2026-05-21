@@ -135,10 +135,8 @@ class SettingsScreen extends ConsumerWidget {
                 _Tile(
                   icon: Icons.mark_email_unread_outlined,
                   label: 'Email',
-                  value: profile.notificationPrefs['email'] == true
-                      ? 'Włączone'
-                      : 'Wyłączone',
-                  valueColor: profile.notificationPrefs['email'] == true
+                  value: profile.emailEnabled ? 'Włączone' : 'Wyłączone',
+                  valueColor: profile.emailEnabled
                       ? AppColors.success
                       : AppColors.mutedFg,
                 ),
@@ -228,6 +226,11 @@ class SettingsScreen extends ConsumerWidget {
     );
     if (ok == true) {
       HapticFeedback.mediumImpact();
+      // Wyrejestruj FCM token na backendzie zanim stracimy JWT.
+      final push = ref.read(pushNotificationServiceProvider);
+      if (push != null) {
+        await push.unregister();
+      }
       await ref.read(authRepositoryProvider).signOut();
       if (context.mounted) {
         context.go('/login');
