@@ -9,6 +9,7 @@ import '../screens/alerts_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/ppe_details_screen.dart';
+import '../screens/push_diagnostics_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/splash_screen.dart';
 
@@ -54,6 +55,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             AlertDetailScreen(alertId: state.pathParameters['id']!),
       ),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(
+        path: '/settings/push-diagnostics',
+        builder: (_, __) => const PushDiagnosticsScreen(),
+      ),
     ],
   );
 });

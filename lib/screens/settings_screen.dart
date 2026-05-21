@@ -140,6 +140,11 @@ class SettingsScreen extends ConsumerWidget {
                       ? AppColors.success
                       : AppColors.mutedFg,
                 ),
+                _LinkTile(
+                  icon: Icons.bug_report_outlined,
+                  label: 'Diagnostyka push',
+                  onTap: () => context.push('/settings/push-diagnostics'),
+                ),
               ]),
               const SizedBox(height: 10),
               Padding(
@@ -282,6 +287,49 @@ class _CardList extends StatelessWidget {
               ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _LinkTile extends StatelessWidget {
+  const _LinkTile(
+      {required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.muted,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 16, color: AppColors.mutedFg),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  color: AppColors.foreground,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                size: 18, color: AppColors.mutedFg),
+          ],
+        ),
       ),
     );
   }

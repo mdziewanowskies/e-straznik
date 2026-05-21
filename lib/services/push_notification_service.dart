@@ -6,19 +6,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../data/repositories/device_token_repository.dart';
+import 'push_diagnostics.dart';
 
 class PushNotificationService {
-  PushNotificationService(this._tokenRepo);
+  PushNotificationService(this._tokenRepo, this._diagnostics);
 
   final DeviceTokenRepository _tokenRepo;
+  final PushDiagnosticsNotifier _diagnostics;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   final StreamController<String> _deepLinkController =
       StreamController<String>.broadcast();
 
-  /// Emits deep-link strings like `estraznik://alerts/<id>` when a notification
-  /// is tapped (foreground/background/terminated).
   Stream<String> get deepLinks => _deepLinkController.stream;
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
@@ -31,12 +31,27 @@ class PushNotificationService {
   Future<void> initialize() async {
     final messaging = FirebaseMessaging.instance;
 
+    _diagnostics.update(stage: PushStage.requestingPermission);
+    debugPrint('[push] requestPermission()');
     final settings = await messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
+    debugPrint('[push] permission: ${settings.authorizationStatus}');
     if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      _diagnostics.update(
+        stage: PushStage.permissionDenied,
+        message:
+            'Brak zgody na push. Włącz w Ustawieniach iOS → e-Strażnik → Powiadomienia.',
+      );
+      return;
+    }
+    if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+      _diagnostics.update(
+        stage: PushStage.permissionNotDetermined,
+        message: 'Nie udało się zapytać o zgodę.',
+      );
       return;
     }
 
@@ -58,49 +73,94 @@ class PushNotificationService {
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_channel);
 
-    // Token registration
-    try {
-      // iOS: musimy poczekać aż APNS zarejestruje token z Apple — dopiero
-      // wtedy FirebaseMessaging.getToken() zwróci FCM token. Bez tego dostajemy
-      // "APNS token has not been set yet".
-      if (Platform.isIOS) {
-        final apns = await _waitForApnsToken();
-        if (apns == null) {
-          debugPrint(
-              '[push] APNS token niedostępny — pomijam rejestrację FCM '
-              '(symulator iOS bez APNS, brak entitlement, lub odmowa zgody).');
-          return;
-        }
-        debugPrint('[push] APNS token gotowy (${apns.substring(0, 8)}…)');
-      }
-
-      final token = await messaging.getToken();
-      if (token != null) {
-        debugPrint('[push] FCM token: ${token.substring(0, 12)}…');
-        await _tokenRepo.upsertToken(token);
-      } else {
-        debugPrint('[push] FCM token null — rejestracja pominięta.');
-      }
-    } catch (e) {
-      debugPrint('[push] FCM token error: $e');
-    }
+    await _registerToken();
 
     messaging.onTokenRefresh.listen((token) {
       debugPrint('[push] FCM token refresh');
       _tokenRepo.upsertToken(token);
     });
 
-    // Foreground
     FirebaseMessaging.onMessage.listen(_handleForeground);
-
-    // Tapped from background
     FirebaseMessaging.onMessageOpenedApp.listen(_handleTap);
 
-    // Terminated state
     final initial = await messaging.getInitialMessage();
     if (initial != null) {
       _handleTap(initial);
     }
+  }
+
+  /// Pełna ścieżka rejestracji tokenu — używana też przez "Spróbuj ponownie"
+  /// w diagnostyce.
+  Future<void> _registerToken() async {
+    final messaging = FirebaseMessaging.instance;
+    try {
+      if (Platform.isIOS) {
+        _diagnostics.update(stage: PushStage.waitingApns);
+        final apns = await _waitForApnsToken();
+        if (apns == null) {
+          _diagnostics.update(
+            stage: PushStage.apnsTimeout,
+            message:
+                'APNS token nie przyszedł w 10s. Przyczyny: symulator iOS, '
+                'brak Push Notifications capability w Xcode, brak APNs Auth '
+                'Key w Firebase Console, albo zła konfiguracja podpisu.',
+          );
+          debugPrint('[push] APNS token niedostępny');
+          return;
+        }
+        _diagnostics.update(
+          stage: PushStage.apnsOk,
+          apnsTokenPrefix: apns.substring(0, apns.length.clamp(0, 12)),
+        );
+        debugPrint('[push] APNS token gotowy (${apns.substring(0, 8)}…)');
+      }
+
+      _diagnostics.update(stage: PushStage.fetchingFcm);
+      final token = await messaging.getToken();
+      if (token == null) {
+        _diagnostics.update(
+          stage: PushStage.fcmNull,
+          message:
+              'FCM zwrócił null. Najczęściej: brak APNs Auth Key w Firebase '
+              'Console, albo niezgodność Bundle ID Xcode vs Firebase.',
+        );
+        debugPrint('[push] FCM token null');
+        return;
+      }
+      debugPrint('[push] FCM token: ${token.substring(0, 12)}…');
+
+      _diagnostics.update(
+        stage: PushStage.registering,
+        fcmTokenPrefix: token.substring(0, token.length.clamp(0, 16)),
+      );
+      final result = await _tokenRepo.upsertToken(token);
+      if (result.ok) {
+        _diagnostics.update(
+          stage: PushStage.registered,
+          lastResponseCode: result.statusCode,
+          lastResponseBody: result.body,
+          message: 'Zarejestrowano na backendzie.',
+        );
+      } else {
+        _diagnostics.update(
+          stage: PushStage.registerFailed,
+          lastResponseCode: result.statusCode,
+          lastResponseBody: result.body,
+          message: result.error ??
+              'POST /api/public/devices/register → ${result.statusCode}',
+        );
+      }
+    } catch (e, st) {
+      debugPrint('[push] _registerToken error: $e\n$st');
+      _diagnostics.update(stage: PushStage.error, message: e.toString());
+    }
+  }
+
+  /// Wymuszone uruchomienie pełnej diagnostyki — wywoływane z UI
+  /// "Diagnostyka push → Spróbuj ponownie".
+  Future<void> runDiagnostics() async {
+    _diagnostics.reset();
+    await _registerToken();
   }
 
   void _handleForeground(RemoteMessage message) {
@@ -128,9 +188,7 @@ class PushNotificationService {
     );
   }
 
-  /// Czeka aż iOS zgłosi APNS token (max ~10s). Zwraca null jeśli się nie udało
-  /// (najczęściej: symulator bez konfiguracji Apple Push, brak APNs Auth Key
-  /// w Firebase Console, brak entitlement `aps-environment`, lub odmowa zgody).
+  /// Czeka aż iOS zgłosi APNS token (max ~10s).
   Future<String?> _waitForApnsToken() async {
     final messaging = FirebaseMessaging.instance;
     for (var i = 0; i < 10; i++) {
@@ -148,9 +206,6 @@ class PushNotificationService {
     }
   }
 
-  /// Wywołać PRZED `auth.signOut()` (póki jeszcze mamy JWT) — backend
-  /// czyści wpis w device_tokens, a FCM dostaje nowy token przy następnym
-  /// logowaniu.
   Future<void> unregister() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
@@ -158,6 +213,7 @@ class PushNotificationService {
         await _tokenRepo.unregisterToken(token);
       }
       await FirebaseMessaging.instance.deleteToken();
+      _diagnostics.reset();
     } catch (e) {
       debugPrint('[push] unregister flow error: $e');
     }

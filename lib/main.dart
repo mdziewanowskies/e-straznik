@@ -13,6 +13,7 @@ import 'config/supabase_config.dart';
 import 'providers/auth_providers.dart';
 import 'providers/supabase_provider.dart';
 import 'router/app_router.dart';
+import 'services/push_diagnostics.dart';
 import 'services/push_notification_service.dart';
 import 'theme/app_theme.dart';
 
@@ -77,6 +78,7 @@ class _ESAppState extends ConsumerState<ESApp> {
     try {
       _push = PushNotificationService(
         ref.read(deviceTokenRepositoryProvider),
+        ref.read(pushDiagnosticsProvider.notifier),
       );
       ref.read(pushNotificationServiceProvider.notifier).state = _push;
       await _push!.initialize();
