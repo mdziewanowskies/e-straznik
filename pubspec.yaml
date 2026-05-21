@@ -48,9 +48,6 @@ dependencies:
   # Deep links
   app_links: ^6.3.2
 
-  # REST API do backendu e-straznik (rejestracja push tokenów)
-  http: ^1.2.0
-
   # Pull-to-refresh z customowym widgetem (maskotka zamiast spinnera)
   custom_refresh_indicator: ^4.0.1
 

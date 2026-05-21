@@ -41,22 +41,9 @@ class PushDiagnosticsScreen extends ConsumerWidget {
           if (status.fcmTokenPrefix != null)
             _InfoRow(
                 label: 'FCM token', value: '${status.fcmTokenPrefix}…'),
-          if (status.lastResponseCode != null)
-            _InfoRow(
-                label: 'HTTP status',
-                value: '${status.lastResponseCode}',
-                color: status.lastResponseCode == 200
-                    ? AppColors.success
-                    : AppColors.danger),
-          if (status.lastResponseBody != null &&
-              status.lastResponseBody!.isNotEmpty)
-            _InfoRow(
-                label: 'Response body',
-                value: status.lastResponseBody!,
-                multiline: true),
           _InfoRow(
-              label: 'Endpoint',
-              value: 'POST https://e-straznik.com/api/public/devices/register',
+              label: 'Zapis',
+              value: 'Supabase: upsert public.device_tokens (onConflict: token)',
               multiline: true),
           _InfoRow(
               label: 'Zaktualizowano',

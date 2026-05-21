@@ -137,22 +137,34 @@ class PushNotificationService {
       if (result.ok) {
         _diagnostics.update(
           stage: PushStage.registered,
-          lastResponseCode: result.statusCode,
-          lastResponseBody: result.body,
-          message: 'Zarejestrowano na backendzie.',
+          message: 'Wpis w tabeli device_tokens utworzony/zaktualizowany.',
         );
       } else {
         _diagnostics.update(
           stage: PushStage.registerFailed,
-          lastResponseCode: result.statusCode,
-          lastResponseBody: result.body,
-          message: result.error ??
-              'POST /api/public/devices/register → ${result.statusCode}',
+          message: _explainError(result.errorCode, result.error),
         );
       }
     } catch (e, st) {
       debugPrint('[push] _registerToken error: $e\n$st');
       _diagnostics.update(stage: PushStage.error, message: e.toString());
+    }
+  }
+
+  String _explainError(String? code, String? raw) {
+    switch (code) {
+      case 'no_session':
+        return 'Brak aktywnej sesji Supabase (zaloguj się ponownie).';
+      case 'no_profile':
+        return 'Twój wpis w tabeli profiles nie istnieje. Skontaktuj się z administratorem.';
+      case 'no_organization':
+        return 'Twój profil nie ma przypisanej organizacji (profiles.organization_id = null).';
+      case 'profile_fetch_failed':
+        return 'Nie udało się pobrać profilu z Supabase: ${raw ?? "(brak szczegółów)"}.';
+      case 'upsert_failed':
+        return 'Insert do device_tokens odrzucony przez Supabase (najpewniej RLS): ${raw ?? "(brak szczegółów)"}.';
+      default:
+        return raw ?? 'Nieznany błąd';
     }
   }
 
@@ -210,7 +222,7 @@ class PushNotificationService {
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
-        await _tokenRepo.unregisterToken(token);
+        await _tokenRepo.deleteToken(token);
       }
       await FirebaseMessaging.instance.deleteToken();
       _diagnostics.reset();

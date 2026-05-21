@@ -21,8 +21,6 @@ class PushStatus {
   final String? message;
   final String? apnsTokenPrefix;
   final String? fcmTokenPrefix;
-  final int? lastResponseCode;
-  final String? lastResponseBody;
   final DateTime updatedAt;
 
   const PushStatus({
@@ -30,8 +28,6 @@ class PushStatus {
     this.message,
     this.apnsTokenPrefix,
     this.fcmTokenPrefix,
-    this.lastResponseCode,
-    this.lastResponseBody,
     required this.updatedAt,
   });
 
@@ -40,16 +36,12 @@ class PushStatus {
     String? message,
     String? apnsTokenPrefix,
     String? fcmTokenPrefix,
-    int? lastResponseCode,
-    String? lastResponseBody,
   }) {
     return PushStatus(
       stage: stage ?? this.stage,
       message: message ?? this.message,
       apnsTokenPrefix: apnsTokenPrefix ?? this.apnsTokenPrefix,
       fcmTokenPrefix: fcmTokenPrefix ?? this.fcmTokenPrefix,
-      lastResponseCode: lastResponseCode ?? this.lastResponseCode,
-      lastResponseBody: lastResponseBody ?? this.lastResponseBody,
       updatedAt: DateTime.now(),
     );
   }
@@ -75,9 +67,9 @@ class PushStatus {
       case PushStage.fcmNull:
         return 'FCM token = null';
       case PushStage.registering:
-        return 'Rejestruję na backendzie…';
+        return 'Zapisuję token w device_tokens…';
       case PushStage.registerFailed:
-        return 'Rejestracja nieudana';
+        return 'Zapis nieudany';
       case PushStage.registered:
         return 'Zarejestrowano ✓';
       case PushStage.error:
@@ -95,16 +87,12 @@ class PushDiagnosticsNotifier extends StateNotifier<PushStatus> {
     String? message,
     String? apnsTokenPrefix,
     String? fcmTokenPrefix,
-    int? lastResponseCode,
-    String? lastResponseBody,
   }) {
     state = state.copyWith(
       stage: stage,
       message: message,
       apnsTokenPrefix: apnsTokenPrefix,
       fcmTokenPrefix: fcmTokenPrefix,
-      lastResponseCode: lastResponseCode,
-      lastResponseBody: lastResponseBody,
     );
   }
 
