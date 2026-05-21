@@ -205,6 +205,9 @@ class _LoginCard extends StatelessWidget {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.email],
+              style: const TextStyle(
+                  color: AppColors.foreground, fontSize: 15),
+              cursorColor: AppColors.primary,
               decoration: const InputDecoration(
                 hintText: 'twoj@email.pl',
                 prefixIcon: Icon(Icons.email_outlined, size: 20),
@@ -224,6 +227,9 @@ class _LoginCard extends StatelessWidget {
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.password],
               onFieldSubmitted: (_) => onSubmit(),
+              style: const TextStyle(
+                  color: AppColors.foreground, fontSize: 15),
+              cursorColor: AppColors.primary,
               decoration: InputDecoration(
                 hintText: '••••••••',
                 prefixIcon: const Icon(Icons.lock_outline, size: 20),

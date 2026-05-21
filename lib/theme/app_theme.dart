@@ -66,6 +66,8 @@ class AppTheme {
           fontSize: 14,
           fontWeight: FontWeight.w400,
         ),
+        labelStyle: const TextStyle(color: AppColors.foreground),
+        floatingLabelStyle: const TextStyle(color: AppColors.foreground),
         prefixIconColor: AppColors.mutedFg,
         suffixIconColor: AppColors.mutedFg,
         border: OutlineInputBorder(

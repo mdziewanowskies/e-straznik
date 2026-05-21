@@ -96,8 +96,10 @@ class _ESAppState extends ConsumerState<ESApp> {
       title: 'e-Strażnik',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      // Dark theme jest jeszcze niegotowy (AppColors są na sztywno
+      // dopasowane do light). Wymuszamy light żeby nie sypał się kontrast
+      // na urządzeniach z włączonym trybem ciemnym systemu.
+      themeMode: ThemeMode.light,
       routerConfig: router,
       locale: const Locale('pl', 'PL'),
       supportedLocales: const [Locale('pl', 'PL')],
