@@ -81,7 +81,12 @@
 			</dict>
 		</array>
 		<key>FirebaseAppDelegateProxyEnabled</key>
-		<false/>
+		<true/>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+			<string>fetch</string>
+		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
 		<key>ITSAppUsesNonExemptEncryption</key>
