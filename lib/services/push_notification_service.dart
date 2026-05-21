@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -59,15 +60,33 @@ class PushNotificationService {
 
     // Token registration
     try {
+      // iOS: musimy poczekać aż APNS zarejestruje token z Apple — dopiero
+      // wtedy FirebaseMessaging.getToken() zwróci FCM token. Bez tego dostajemy
+      // "APNS token has not been set yet".
+      if (Platform.isIOS) {
+        final apns = await _waitForApnsToken();
+        if (apns == null) {
+          debugPrint(
+              '[push] APNS token niedostępny — pomijam rejestrację FCM '
+              '(symulator iOS bez APNS, brak entitlement, lub odmowa zgody).');
+          return;
+        }
+        debugPrint('[push] APNS token gotowy (${apns.substring(0, 8)}…)');
+      }
+
       final token = await messaging.getToken();
       if (token != null) {
+        debugPrint('[push] FCM token: ${token.substring(0, 12)}…');
         await _tokenRepo.upsertToken(token);
+      } else {
+        debugPrint('[push] FCM token null — rejestracja pominięta.');
       }
     } catch (e) {
-      debugPrint('FCM token error: $e');
+      debugPrint('[push] FCM token error: $e');
     }
 
     messaging.onTokenRefresh.listen((token) {
+      debugPrint('[push] FCM token refresh');
       _tokenRepo.upsertToken(token);
     });
 
@@ -107,6 +126,19 @@ class PushNotificationService {
       ),
       payload: deepLink,
     );
+  }
+
+  /// Czeka aż iOS zgłosi APNS token (max ~10s). Zwraca null jeśli się nie udało
+  /// (najczęściej: symulator bez konfiguracji Apple Push, brak APNs Auth Key
+  /// w Firebase Console, brak entitlement `aps-environment`, lub odmowa zgody).
+  Future<String?> _waitForApnsToken() async {
+    final messaging = FirebaseMessaging.instance;
+    for (var i = 0; i < 10; i++) {
+      final token = await messaging.getAPNSToken();
+      if (token != null) return token;
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    return null;
   }
 
   void _handleTap(RemoteMessage message) {
