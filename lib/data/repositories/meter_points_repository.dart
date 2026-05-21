@@ -106,17 +106,35 @@ class MeterPointsRepository {
         .toList();
   }
 
-  Future<List<Reading>> listReadings(String meterPointId,
-      {int limit = 60}) async {
-    final data = await _client
+  Future<List<Reading>> listReadings(
+    String meterPointId, {
+    DateTime? from,
+    DateTime? to,
+    int limit = 400,
+  }) async {
+    var q = _client
         .from('readings')
         .select(
             'id, date_from, date_to, profile, active_consumed_kwh_total, active_consumed_kwh_t1, active_consumed_kwh_t2, active_produced_kwh_total, reactive_inductive_kvarh_total, reactive_capacitive_kvarh_total')
-        .eq('meter_point_id', meterPointId)
-        .order('date_from', ascending: false)
-        .limit(limit);
+        .eq('meter_point_id', meterPointId);
+    if (from != null) {
+      q = q.gte('date_from', _dateOnly(from));
+    }
+    if (to != null) {
+      q = q.lte('date_from', _dateOnly(to));
+    }
+    final data =
+        await q.order('date_from', ascending: false).limit(limit);
     return (data as List)
         .map((e) => Reading.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// `readings.date_from` to `date` (bez czasu), więc format yyyy-MM-dd.
+  static String _dateOnly(DateTime dt) {
+    final d = DateTime(dt.year, dt.month, dt.day);
+    return '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
   }
 }

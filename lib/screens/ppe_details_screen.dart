@@ -7,9 +7,11 @@ import '../data/models/meter_point.dart';
 import '../data/models/monthly_summary.dart';
 import '../data/models/power_reading.dart';
 import '../providers/dashboard_providers.dart';
+import '../providers/date_range_providers.dart';
 import '../providers/meter_point_detail_providers.dart';
 import '../theme/colors.dart';
 import '../utils/formatters.dart';
+import '../widgets/date_range_picker_bar.dart';
 import '../widgets/kpi_tile.dart';
 import '../widgets/mascot_refresh_indicator.dart';
 import '../widgets/status_badge.dart';
@@ -174,44 +176,60 @@ class _PowerTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final range = ref.watch(powerDateRangeProvider(meterPoint.id));
     final powerAsync = ref.watch(power15MinProvider(meterPoint.id));
-    return MascotRefreshIndicator(
-      onRefresh: () async {
-        HapticFeedback.selectionClick();
-        ref.invalidate(power15MinProvider(meterPoint.id));
-      },
-      child: powerAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Błąd: $e')),
-        data: (readings) {
-          if (readings.isEmpty) {
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 80),
-                Center(child: Text('Brak odczytów 15-minutowych.')),
-              ],
-            );
-          }
-          return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            children: [
-              SizedBox(
-                height: 260,
-                child: _PowerChart(
-                  readings: readings,
-                  mocUmowna: meterPoint.mocUmownaKw,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text('Linia: ${Fmt.kw(meterPoint.mocUmownaKw)} (moc umowna)',
-                  style: const TextStyle(
-                      color: AppColors.mutedFg, fontSize: 12)),
-            ],
-          );
-        },
-      ),
+    return Column(
+      children: [
+        DateRangePickerBar(
+          range: range,
+          onChanged: (r) => ref
+              .read(powerDateRangeProvider(meterPoint.id).notifier)
+              .state = r,
+        ),
+        Expanded(
+          child: MascotRefreshIndicator(
+            onRefresh: () async {
+              HapticFeedback.selectionClick();
+              ref.invalidate(power15MinProvider(meterPoint.id));
+            },
+            child: powerAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Błąd: $e')),
+              data: (readings) {
+                if (readings.isEmpty) {
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 80),
+                      Center(
+                          child: Text(
+                              'Brak odczytów 15-minutowych w wybranym zakresie.')),
+                    ],
+                  );
+                }
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    SizedBox(
+                      height: 260,
+                      child: _PowerChart(
+                        readings: readings,
+                        mocUmowna: meterPoint.mocUmownaKw,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                        'Linia: ${Fmt.kw(meterPoint.mocUmownaKw)} (moc umowna)',
+                        style: const TextStyle(
+                            color: AppColors.mutedFg, fontSize: 12)),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -327,114 +345,137 @@ class _ReactiveTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final range = ref.watch(readingsDateRangeProvider(meterPointId));
     final readingsAsync = ref.watch(readingsProvider(meterPointId));
-    return MascotRefreshIndicator(
-      onRefresh: () async {
-        HapticFeedback.selectionClick();
-        ref.invalidate(readingsProvider(meterPointId));
-      },
-      child: readingsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Błąd: $e')),
-        data: (readings) {
-          if (readings.isEmpty) {
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 80),
-                Center(child: Text('Brak danych o energii biernej.')),
-              ],
-            );
-          }
-          final take = readings.take(30).toList().reversed.toList();
-          final maxY = take.fold<double>(0, (m, r) {
-            final v = (r.inductiveKvarh ?? 0) > (r.capacitiveKvarh ?? 0)
-                ? (r.inductiveKvarh ?? 0)
-                : (r.capacitiveKvarh ?? 0);
-            return v > m ? v : m;
-          });
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              SizedBox(
-                height: 280,
-                child: BarChart(
-                  BarChartData(
-                    maxY: maxY == 0 ? 1 : maxY * 1.1,
-                    gridData:
-                        const FlGridData(show: true, drawVerticalLine: false),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 36,
-                          getTitlesWidget: (v, _) => Text(
-                            v.toStringAsFixed(0),
-                            style: const TextStyle(
-                                fontSize: 10, color: AppColors.mutedFg),
-                          ),
-                        ),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 22,
-                          interval: (take.length / 5)
-                              .clamp(1, 1000)
-                              .toDouble(),
-                          getTitlesWidget: (v, _) {
-                            final idx = v.toInt();
-                            if (idx < 0 || idx >= take.length) {
-                              return const SizedBox.shrink();
-                            }
-                            return Text(
-                              Fmt.date(take[idx].date)
-                                  .substring(0, 5), // dd.MM
-                              style: const TextStyle(
-                                  fontSize: 9, color: AppColors.mutedFg),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    barGroups: [
-                      for (int i = 0; i < take.length; i++)
-                        BarChartGroupData(
-                          x: i,
-                          barRods: [
-                            BarChartRodData(
-                              toY: take[i].inductiveKvarh ?? 0,
-                              color: AppColors.primary,
-                              width: 5,
-                            ),
-                            BarChartRodData(
-                              toY: take[i].capacitiveKvarh ?? 0,
-                              color: AppColors.teal,
-                              width: 5,
-                            ),
-                          ],
-                        ),
+    return Column(
+      children: [
+        DateRangePickerBar(
+          range: range,
+          onChanged: (r) => ref
+              .read(readingsDateRangeProvider(meterPointId).notifier)
+              .state = r,
+        ),
+        Expanded(
+          child: MascotRefreshIndicator(
+            onRefresh: () async {
+              HapticFeedback.selectionClick();
+              ref.invalidate(readingsProvider(meterPointId));
+            },
+            child: readingsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Błąd: $e')),
+              data: (readings) {
+                if (readings.isEmpty) {
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 80),
+                      Center(
+                          child: Text(
+                              'Brak danych o energii biernej w wybranym zakresie.')),
                     ],
+                  );
+                }
+                return _ReactiveChartBody(readings: readings);
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReactiveChartBody extends StatelessWidget {
+  const _ReactiveChartBody({required this.readings});
+  final List<Reading> readings;
+
+  @override
+  Widget build(BuildContext context) {
+    final take = readings.toList().reversed.toList();
+    final maxY = take.fold<double>(0, (m, r) {
+      final v = (r.inductiveKvarh ?? 0) > (r.capacitiveKvarh ?? 0)
+          ? (r.inductiveKvarh ?? 0)
+          : (r.capacitiveKvarh ?? 0);
+      return v > m ? v : m;
+    });
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        SizedBox(
+          height: 280,
+          child: BarChart(
+            BarChartData(
+              maxY: maxY == 0 ? 1 : maxY * 1.1,
+              gridData:
+                  const FlGridData(show: true, drawVerticalLine: false),
+              borderData: FlBorderData(show: false),
+              titlesData: FlTitlesData(
+                rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 36,
+                    getTitlesWidget: (v, _) => Text(
+                      v.toStringAsFixed(0),
+                      style: const TextStyle(
+                          fontSize: 10, color: AppColors.mutedFg),
+                    ),
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 22,
+                    interval:
+                        (take.length / 5).clamp(1, 1000).toDouble(),
+                    getTitlesWidget: (v, _) {
+                      final idx = v.toInt();
+                      if (idx < 0 || idx >= take.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return Text(
+                        Fmt.date(take[idx].date).substring(0, 5),
+                        style: const TextStyle(
+                            fontSize: 9, color: AppColors.mutedFg),
+                      );
+                    },
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Row(
-                children: [
-                  _Legend(color: AppColors.primary, label: 'Indukcyjna'),
-                  SizedBox(width: 16),
-                  _Legend(color: AppColors.teal, label: 'Pojemnościowa'),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
+              barGroups: [
+                for (int i = 0; i < take.length; i++)
+                  BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: take[i].inductiveKvarh ?? 0,
+                        color: AppColors.primary,
+                        width: 5,
+                      ),
+                      BarChartRodData(
+                        toY: take[i].capacitiveKvarh ?? 0,
+                        color: AppColors.teal,
+                        width: 5,
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Row(
+          children: [
+            _Legend(color: AppColors.primary, label: 'Indukcyjna'),
+            SizedBox(width: 16),
+            _Legend(color: AppColors.teal, label: 'Pojemnościowa'),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -468,55 +509,71 @@ class _ReadingsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final range = ref.watch(readingsDateRangeProvider(meterPointId));
     final readingsAsync = ref.watch(readingsProvider(meterPointId));
-    return MascotRefreshIndicator(
-      onRefresh: () async {
-        HapticFeedback.selectionClick();
-        ref.invalidate(readingsProvider(meterPointId));
-      },
-      child: readingsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Błąd: $e')),
-        data: (readings) {
-          if (readings.isEmpty) {
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 80),
-                Center(child: Text('Brak odczytów.')),
-              ],
-            );
-          }
-          return ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            itemCount: readings.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              final r = readings[i];
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(Fmt.date(r.date),
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(
-                  'T1: ${Fmt.kwh(r.activeT1Kwh)} • T2: ${Fmt.kwh(r.activeT2Kwh)}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                trailing: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Q+: ${Fmt.kvarh(r.inductiveKvarh)}',
-                        style: const TextStyle(fontSize: 12)),
-                    Text('Q-: ${Fmt.kvarh(r.capacitiveKvarh)}',
-                        style: const TextStyle(fontSize: 12)),
-                  ],
-                ),
-              );
+    return Column(
+      children: [
+        DateRangePickerBar(
+          range: range,
+          onChanged: (r) => ref
+              .read(readingsDateRangeProvider(meterPointId).notifier)
+              .state = r,
+        ),
+        Expanded(
+          child: MascotRefreshIndicator(
+            onRefresh: () async {
+              HapticFeedback.selectionClick();
+              ref.invalidate(readingsProvider(meterPointId));
             },
-          );
-        },
-      ),
+            child: readingsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Błąd: $e')),
+              data: (readings) {
+                if (readings.isEmpty) {
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 80),
+                      Center(
+                          child: Text(
+                              'Brak odczytów w wybranym zakresie.')),
+                    ],
+                  );
+                }
+                return ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: readings.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, i) {
+                    final r = readings[i];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(Fmt.date(r.date),
+                          style:
+                              const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text(
+                        'T1: ${Fmt.kwh(r.activeT1Kwh)} • T2: ${Fmt.kwh(r.activeT2Kwh)}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Q+: ${Fmt.kvarh(r.inductiveKvarh)}',
+                              style: const TextStyle(fontSize: 12)),
+                          Text('Q-: ${Fmt.kvarh(r.capacitiveKvarh)}',
+                              style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
