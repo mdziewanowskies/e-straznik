@@ -5,15 +5,16 @@ import FirebaseMessaging
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  // Most natywny do Darta — żeby zobaczyć w UI co APNS naprawdę zrobił
+  // (czy callback w ogóle się odpalił, jaki błąd zwrócił Apple).
+  static var lastApnsEvent: String = "idle"
+  static var lastApnsValue: String = ""
+  static var apnsChannel: FlutterMethodChannel?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Konfiguruj Firebase EAGER — przed Flutter pluginami, żeby
-    // FirebaseMessaging było gotowe zanim iOS wywoła APNS callback.
-    // Wzorzec FlutterImplicitEngineDelegate rejestruje pluginy późno
-    // (po didFinishLaunching), przez co auto-proxy Firebase nie zdąży
-    // zaswizzlować i tracimy token APNS.
     if FirebaseApp.app() == nil {
       FirebaseApp.configure()
     }
@@ -22,17 +23,33 @@ import FirebaseMessaging
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    AppDelegate.apnsChannel = FlutterMethodChannel(
+      name: "estraznik/apns",
+      binaryMessenger: engineBridge.binaryMessenger
+    )
+    AppDelegate.apnsChannel?.setMethodCallHandler { call, result in
+      switch call.method {
+      case "getState":
+        result([
+          "event": AppDelegate.lastApnsEvent,
+          "value": AppDelegate.lastApnsValue,
+        ])
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 
-  // Ręcznie przekazujemy APNS token do Firebase Messaging. Nawet gdyby
-  // auto-proxy (FirebaseAppDelegateProxyEnabled=true) zadziałał, ten override
-  // i tak jest wołany pierwszy — przekazujemy token jawnie i logujemy.
   override func application(
     _ application: UIApplication,
     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
   ) {
     let tokenHex = deviceToken.map { String(format: "%02x", $0) }.joined()
-    NSLog("[APNS] device token zarejestrowany: \(String(tokenHex.prefix(16)))… (len=\(deviceToken.count))")
+    let prefix = String(tokenHex.prefix(16))
+    NSLog("[APNS] device token zarejestrowany: \(prefix)… (len=\(deviceToken.count))")
+    AppDelegate.lastApnsEvent = "registered"
+    AppDelegate.lastApnsValue = "\(prefix)… (\(deviceToken.count) bytes)"
     Messaging.messaging().apnsToken = deviceToken
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
@@ -41,8 +58,12 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFailToRegisterForRemoteNotificationsWithError error: Error
   ) {
-    NSLog("[APNS] rejestracja NIE udała się: \(error.localizedDescription)")
-    NSLog("[APNS] error details: \((error as NSError).userInfo)")
+    let ns = error as NSError
+    let msg = "\(error.localizedDescription) [domain=\(ns.domain) code=\(ns.code)]"
+    NSLog("[APNS] rejestracja NIE udała się: \(msg)")
+    NSLog("[APNS] userInfo: \(ns.userInfo)")
+    AppDelegate.lastApnsEvent = "failed"
+    AppDelegate.lastApnsValue = msg
     super.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
   }
 }

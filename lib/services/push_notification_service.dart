@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../data/repositories/device_token_repository.dart';
+import 'native_apns_bridge.dart';
 import 'push_diagnostics.dart';
 
 class PushNotificationService {
@@ -98,14 +99,29 @@ class PushNotificationService {
         _diagnostics.update(stage: PushStage.waitingApns);
         final apns = await _waitForApnsToken();
         if (apns == null) {
+          // Spytaj natywnego AppDelegate co naprawdę zdarzyło się z APNS
+          // (czy callback w ogóle się odpalił, jaki błąd zwrócił Apple).
+          final native = await NativeApnsBridge.getState();
+          String detail;
+          if (native == null || native.event == 'idle') {
+            detail = 'APNS callback w ogóle się nie odpalił (event=idle). '
+                'iOS nie wywołał didRegisterForRemoteNotifications — '
+                'najpewniej brak Push Notifications capability w '
+                'provisioning profile (entitlement zastrippowany przy '
+                'podpisywaniu).';
+          } else if (native.event == 'failed') {
+            detail = 'Apple odrzucił rejestrację APNS:\n${native.value}';
+          } else if (native.event == 'registered') {
+            detail = 'APNS token dotarł do AppDelegate (${native.value}), '
+                'ale Firebase Messaging go nie odebrał — problem z '
+                'inicjalizacją Firebase lub timing swizzlingu.';
+          } else {
+            detail = 'Nieznany stan natywny: ${native.event} / ${native.value}';
+          }
           _diagnostics.update(
-            stage: PushStage.apnsTimeout,
-            message:
-                'APNS token nie przyszedł w 10s. Przyczyny: symulator iOS, '
-                'brak Push Notifications capability w Xcode, brak APNs Auth '
-                'Key w Firebase Console, albo zła konfiguracja podpisu.',
-          );
-          debugPrint('[push] APNS token niedostępny');
+              stage: PushStage.apnsTimeout, message: detail);
+          debugPrint('[push] APNS timeout — native state: '
+              '${native?.event}/${native?.value}');
           return;
         }
         _diagnostics.update(
