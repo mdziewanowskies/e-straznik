@@ -97,6 +97,10 @@ class PushNotificationService {
     try {
       if (Platform.isIOS) {
         _diagnostics.update(stage: PushStage.waitingApns);
+        // Wymuś rejestrację — Firebase auto-proxy nie zawsze sam wywołuje
+        // UIApplication.registerForRemoteNotifications() po requestPermission.
+        // Bez tego iOS nigdy nie pyta APNS o token i callback się nie odpala.
+        await NativeApnsBridge.registerForRemoteNotifications();
         final apns = await _waitForApnsToken();
         if (apns == null) {
           // Spytaj natywnego AppDelegate co naprawdę zdarzyło się z APNS

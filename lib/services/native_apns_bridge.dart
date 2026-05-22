@@ -28,4 +28,15 @@ class NativeApnsBridge {
       return null;
     }
   }
+
+  /// Wymusza UIApplication.registerForRemoteNotifications() — wołane po
+  /// requestPermission, bo Firebase auto-proxy nie zawsze to robi samo.
+  static Future<void> registerForRemoteNotifications() async {
+    if (!Platform.isIOS) return;
+    try {
+      await _channel.invokeMethod<void>('registerForRemoteNotifications');
+    } catch (e) {
+      debugPrint('[apns-bridge] registerForRemoteNotifications error: $e');
+    }
+  }
 }

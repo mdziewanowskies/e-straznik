@@ -35,6 +35,12 @@ import FirebaseMessaging
           "event": AppDelegate.lastApnsEvent,
           "value": AppDelegate.lastApnsValue,
         ])
+      case "registerForRemoteNotifications":
+        DispatchQueue.main.async {
+          NSLog("[APNS] manualnie wywołuję registerForRemoteNotifications()")
+          UIApplication.shared.registerForRemoteNotifications()
+        }
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
